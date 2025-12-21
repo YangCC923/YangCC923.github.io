@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOBA IMPACT - 初號機專用介面</title>
+    <!-- 載入 React 與 Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Lucide 圖示庫 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        :root {
+            --eva-purple: #7030A0;
+            --eva-green: #BFFF00;
+            --eva-orange: #FF9500;
+            --eva-black: #0D0D0D;
+            --eva-dark-purple: #3A1F5D;
+        }
+
+        body { 
+            background-color: var(--eva-black);
+            color: var(--eva-green);
+            font-family: 'Share Tech Mono', "微軟正黑體", monospace;
+            background-image: 
+                radial-gradient(circle at 2px 2px, #1a1a1a 1px, transparent 0);
+            background-size: 32px 32px;
+        }
+
+        .warning-stripe {
+            background: repeating-linear-gradient(
+                -45deg,
+                var(--eva-purple),
+                var(--eva-purple) 15px,
+                var(--eva-green) 15px,
+                var(--eva-green) 30px
+            );
+        }
+
+        .eva-border {
+            border: 2px solid var(--eva-purple);
+            position: relative;
+            background: rgba(112, 48, 160, 0.05);
+        }
+
+        .eva-border::before {
+            content: "";
+            position: absolute;
+            top: -2px; left: -2px;
+            width: 12px; height: 12px;
+            border-top: 4px solid var(--eva-green);
+            border-left: 4px solid var(--eva-green);
+        }
+
+        .eva-btn {
+            background: transparent;
+            border: 2px solid var(--eva-purple);
+            color: var(--eva-green);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .eva-btn:hover {
+            background: var(--eva-purple);
+            color: var(--eva-green);
+            box-shadow: 0 0 15px var(--eva-purple);
+        }
+
+        .eva-btn-primary {
+            background: var(--eva-purple);
+            border: 2px solid var(--eva-green);
+            color: var(--eva-green);
+        }
+
+        .eva-input {
+            background: rgba(112, 48, 160, 0.15);
+            border: 1px solid var(--eva-purple);
+            color: var(--eva-green);
+            padding: 10px;
+            outline: none;
+        }
+
+        .eva-input:focus {
+            border-color: var(--eva-green);
+            box-shadow: 0 0 8px rgba(191, 255, 0, 0.3);
+        }
+
+        .eva-input::placeholder {
+            color: rgba(191, 255, 0, 0.2);
+        }
+
+        .hexagon-bg {
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+            background: rgba(112, 48, 160, 0.1);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(191, 255, 0, 0.08);
+            position: fixed;
+            top: 0;
+            z-index: 5;
+            animation: scanline 6s linear infinite;
+            pointer-events: none;
+        }
+
+        .copy-feedback {
+            animation: fadeOut 1.5s forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .fab-eva {
+            box-shadow: 0 0 20px rgba(112, 48, 160, 0.8);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: var(--eva-black);
+            border: 2px solid var(--eva-purple);
+        }
+        .fab-eva:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px var(--eva-green);
+            border-color: var(--eva-green);
+        }
+        
+        @keyframes eye-glow {
+            0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 2px var(--eva-green)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 10px var(--eva-green)); }
+        }
+        .eye-animate {
+            animation: eye-glow 2s infinite;
+        }
+    </style>
+</head>
+<body class="no-scrollbar overflow-x-hidden">
+    <div class="scanline"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        const EvaUnit01Icon = () => (
+            <svg viewBox="0 0 100 100" className="w-12 h-12">
+                <path d="M30 70 L40 90 L70 90 L80 70 L60 65 Z" fill="#3A1F5D" />
+                <path d="M25 45 L35 15 L45 35 L85 50 L80 75 L40 70 Z" fill="#7030A0" stroke="#000" strokeWidth="1" />
+                <path d="M35 15 L25 5 L30 15 Z" fill="#7030A0" />
+                <path d="M33 12 L30 8 L32 12 Z" fill="#BFFF00" />
+                <path d="M40 70 L80 75 L75 85 L40 80 Z" fill="#3A1F5D" />
+                <path d="M45 48 Q50 45 55 48 L53 52 Q50 50 47 52 Z" fill="#BFFF00" className="eye-animate" />
+                <path d="M40 55 L45 55 L42 60 Z" fill="#FF9500" />
+                <path d="M50 38 L80 50 L78 55 L50 45 Z" fill="#BFFF00" opacity="0.6" />
+            </svg>
+        );
+
+        const App = () => {
+            const [drinks, setDrinks] = useState(() => {
+                const saved = localStorage.getItem('my_drink_records_eva_v5');
+                return saved ? JSON.parse(saved) : [];
+            });
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [showImportModal, setShowImportModal] = useState(false);
+            const [editingId, setEditingId] = useState(null);
+            const [importText, setImportText] = useState('');
+            const [formData, setFormData] = useState({ 
+                brand: '', 
+                name: '', 
+                size: 'L',
+                sugar: '無糖', 
+                ice: '少冰', 
+                isEcoFriendly: false, 
+                price: '' 
+            });
+            const [copyMsg, setCopyMsg] = useState(null);
+
+            const commonBrands = [
+                "茶の魔手", "50嵐", "清心福全", "迷客夏", "可不可", 
+                "麻古茶坊", "功夫茶", "早安有喜", "麥味登", "萬波", 
+                "台茶一號", "拾汣茶屋", "呷尚寶", "八曜和茶", "得正", 
+                "鶴茶樓", "一沐日", "五桐號", "龜記", "茶湯會", 
+                "珍煮丹", "COMEBUY", "大苑子", "春水堂", "天仁茗茶", 
+                "再睡5分鐘", "先喝道", "七盞茶", "烏弄"
+            ];
+
+            const sizeOptions = ['M', 'L', 'XL', '瓶裝', '固定'];
+            const sugarOptions = ['無糖', '微糖', '半糖', '少糖', '全糖'];
+            const iceOptions = ['去冰', '微冰', '少冰', '正常', '溫熱'];
+
+            useEffect(() => {
+                localStorage.setItem('my_drink_records_eva_v5', JSON.stringify(drinks));
+            }, [drinks]);
+
+            const stats = useMemo(() => {
+                const todayKey = new Date().toLocaleDateString('zh-TW');
+                return {
+                    todayTotal: drinks.filter(d => d.dateKey === todayKey).reduce((sum, d) => sum + d.finalPrice, 0),
+                    yearlyTotal: drinks.reduce((sum, d) => sum + d.finalPrice, 0),
+                    yearlyCount: drinks.length
+                };
+            }, [drinks]);
+
+            const handleCopy = (drink) => {
+                const dateParts = drink.dateKey.split('/');
+                const dateStr = `${dateParts[1]}/${dateParts[2]}`;
+                const ecoStr = drink.isEcoFriendly ? "環保杯-5" : "";
+                const text = `${dateStr} ${drink.brand} ${drink.name} ${drink.size || 'L'} ${drink.sugar}${drink.ice} ${drink.finalPrice} ${ecoStr}`.trim();
+                
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                setCopyMsg(drink.id);
+                setTimeout(() => setCopyMsg(null), 1500);
+            };
+
+            const handleImport = () => {
+                const lines = importText.split('\n');
+                const newItems = [];
+                lines.forEach((line, index) => {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) return;
+                    const parts = trimmedLine.split(/\s+/);
+                    if (parts.length < 3) return;
+
+                    const datePart = parts[0];
+                    const brand = parts[1];
+                    const name = parts[2];
+                    let size = 'L';
+                    let sugarIce = '無糖少冰';
+                    let price = 0;
+
+                    for (let i = parts.length - 1; i >= 0; i--) {
+                        const val = parseInt(parts[i]);
+                        if (!isNaN(val)) { price = val; break; }
+                    }
+
+                    if (parts[3]) {
+                        if (sizeOptions.includes(parts[3])) {
+                            size = parts[3];
+                            sugarIce = parts[4] || '無糖少冰';
+                        } else if (isNaN(parseInt(parts[3]))) {
+                            size = 'L';
+                            sugarIce = parts[3];
+                        }
+                    }
+
+                    const isEco = trimmedLine.includes('環保杯') || trimmedLine.includes('my杯');
+                    const [m, d] = datePart.split('/');
+                    if (!m || !d) return;
+
+                    newItems.push({
+                        id: Date.now() + index,
+                        dateKey: `2025/${m}/${d}`,
+                        time: "12:00", brand, name, size,
+                        sugar: sugarOptions.find(s => sugarIce.includes(s)) || '無糖',
+                        ice: iceOptions.find(i => sugarIce.includes(i)) || '少冰',
+                        isEcoFriendly: isEco, finalPrice: price
+                    });
+                });
+                setDrinks([...newItems, ...drinks]);
+                setShowImportModal(false);
+                setImportText('');
+            };
+
+            const handleEdit = (drink) => {
+                setEditingId(drink.id);
+                setFormData({
+                    brand: drink.brand,
+                    name: drink.name,
+                    size: drink.size || 'L',
+                    sugar: drink.sugar,
+                    ice: drink.ice,
+                    isEcoFriendly: drink.isEcoFriendly,
+                    price: drink.isEcoFriendly ? drink.finalPrice + 5 : drink.finalPrice
+                });
+                setShowAddModal(true);
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                const basePrice = parseInt(formData.price);
+                const finalPrice = formData.isEcoFriendly ? basePrice - 5 : basePrice;
+                
+                if (editingId) {
+                    setDrinks(drinks.map(d => d.id === editingId ? { ...d, ...formData, finalPrice } : d));
+                } else {
+                    setDrinks([{
+                        id: Date.now(),
+                        dateKey: new Date().toLocaleDateString('zh-TW'),
+                        time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
+                        ...formData, 
+                        finalPrice
+                    }, ...drinks]);
+                }
+                
+                closeModal();
+            };
+
+            const closeModal = () => {
+                setShowAddModal(false);
+                setEditingId(null);
+                setFormData({ brand: '', name: '', size: 'L', sugar: '無糖', ice: '少冰', isEcoFriendly: false, price: '' });
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen pb-32 relative">
+                    <header className="pt-8 pb-4 px-4 sticky top-0 z-40 bg-[#0D0D0D] border-b-2 border-[#7030A0]">
+                        <div className="warning-stripe h-2.5 w-full mb-4"></div>
+                        <div className="flex justify-between items-end pb-2">
+                            <div>
+                                <p className="text-[10px] font-bold tracking-[0.3em] text-[#BFFF00] animate-pulse uppercase">MAGI SYSTEM / RECORD MODE</p>
+                                <h1 className="text-2xl font-black italic tracking-tighter text-[#BFFF00]">BOBA IMPACT</h1>
+                            </div>
+                            <button onClick={() => setShowImportModal(true)} className="eva-btn px-4 py-1 text-[10px] mb-1">批次匯入</button>
+                        </div>
+                    </header>
+
+                    <main className="mt-6 px-4">
+                        <div className="grid grid-cols-2 gap-4 mb-10">
+                            <div className="eva-border p-4">
+                                <p className="text-[9px] font-bold text-[#BFFF00]/60 mb-1">今日同步率 (消耗)</p>
+                                <div className="flex items-baseline gap-1 text-[#BFFF00]">
+                                    <span className="text-2xl font-black italic">${stats.todayTotal}</span>
+                                    <span className="text-[8px] opacity-50 font-bold">YEN</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-[#1A1A1A] mt-2 overflow-hidden"><div className="h-full bg-[#BFFF00] shadow-[0_0_8px_#BFFF00]" style={{ width: '40%' }}></div></div>
+                            </div>
+                            <div className="eva-border p-4 border-[#FF9500]">
+                                <p className="text-[9px] font-bold text-[#FF9500]/60 mb-1">年度總衝擊 (2025)</p>
+                                <div className="flex items-baseline gap-1 text-[#FF9500]">
+                                    <span className="text-2xl font-black italic">${stats.yearlyTotal}</span>
+                                    <span className="text-[8px] opacity-50 font-bold">T.P</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-[#1A1A1A] mt-2 overflow-hidden"><div className="h-full bg-[#FF9500] shadow-[0_0_8px_#FF9500]" style={{ width: '65%' }}></div></div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {drinks.length === 0 ? (
+                                <div className="text-center py-20 border-2 border-dashed border-[#7030A0]/30 rounded-lg">
+                                    <p className="text-xs font-bold italic tracking-widest text-[#7030A0]">未偵測到目標紀錄</p>
+                                </div>
+                            ) : drinks.sort((a,b) => new Date(b.dateKey) - new Date(a.dateKey)).map(drink => {
+                                const parts = drink.dateKey.split('/');
+                                return (
+                                    <div key={drink.id} className="relative group">
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#BFFF00] shadow-[0_0_5px_#BFFF00]"></div>
+                                        <div className="ml-3 p-4 bg-[#141414] border border-[#7030A0]/40 hover:border-[#BFFF00] transition-all relative overflow-hidden pb-12">
+                                            <div className="absolute right-0 top-0 w-16 h-16 hexagon-bg opacity-30 -mr-4 -mt-4"></div>
+                                            <div className="flex justify-between items-center relative z-10">
+                                                <div className="flex gap-4 items-center min-w-0">
+                                                    <div className="text-center border-r border-[#7030A0]/50 pr-4 shrink-0">
+                                                        <p className="text-[8px] text-[#7030A0] font-bold uppercase">DATE</p>
+                                                        <p className="text-base font-black italic text-[#BFFF00] tracking-tighter">{parts[1]}/{parts[2]}</p>
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h3 className="text-sm font-black text-[#BFFF00] truncate tracking-tight">{drink.brand}</h3>
+                                                        <p className="text-[10px] text-gray-400 font-bold mt-0.5 truncate">{drink.name} <span className="text-[#7030A0]">({drink.size || 'L'})</span></p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-base font-black italic text-[#FF9500] tracking-tighter">${drink.finalPrice}</p>
+                                                    {/* 加大甜度冰塊字體 */}
+                                                    <p className="text-[10px] text-gray-600 font-bold tracking-tight">{drink.sugar} / {drink.ice}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* 底部功能與狀態欄：對齊右下角功能鍵 */}
+                                            <div className="absolute bottom-2 left-4 right-2 flex justify-between items-end z-20">
+                                                <div className="min-w-0 pr-2">
+                                                    {drink.isEcoFriendly && (
+                                                        <div className="text-[9px] font-bold text-[#00FF00] flex items-center gap-1.5 animate-pulse">
+                                                            <div className="w-1 h-3 bg-[#00FF00]"></div>
+                                                            環保補給判定確認：獎勵 -$5
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex gap-4 items-center shrink-0">
+                                                    {copyMsg === drink.id && (
+                                                        <span className="text-[8px] font-bold text-[#BFFF00] bg-[#000] px-1 copy-feedback shadow-[0_0_5px_#BFFF00]">已複製</span>
+                                                    )}
+                                                    <button onClick={() => handleEdit(drink)} className="text-gray-500 hover:text-blue-400 transition-colors p-1" title="編輯"><Icon name="edit-3" size={16} /></button>
+                                                    <button onClick={() => handleCopy(drink)} className="text-gray-500 hover:text-[#BFFF00] transition-colors p-1" title="複製"><Icon name="copy" size={16} /></button>
+                                                    <button onClick={() => setDrinks(drinks.filter(d => d.id !== drink.id))} className="text-gray-700 hover:text-red-500 transition-colors p-1" title="刪除"><Icon name="trash-2" size={16} /></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </main>
+
+                    <button onClick={() => setShowAddModal(true)} className="fixed bottom-10 right-10 w-20 h-20 rounded-full flex items-center justify-center fab-eva z-50 p-2 overflow-hidden">
+                        <EvaUnit01Icon />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#BFFF00]/10 to-transparent pointer-events-none"></div>
+                    </button>
+
+                    {showImportModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
+                            <div className="eva-border w-full max-w-sm p-6 bg-[#0D0D0D]">
+                                <div className="flex justify-between items-center mb-6 border-b border-[#BFFF00] pb-2 text-[#BFFF00]">
+                                    <h2 className="text-xs font-bold tracking-[0.2em]">大量數據同步程序</h2>
+                                    <button onClick={() => setShowImportModal(false)}><Icon name="x" size={16} /></button>
+                                </div>
+                                <textarea className="eva-input w-full h-48 text-[10px] font-mono mb-4 no-scrollbar leading-relaxed" placeholder="貼上資料... (無容量則預設 L)" value={importText} onChange={e => setImportText(e.target.value)} />
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowImportModal(false)} className="eva-btn flex-1 py-3 text-[10px]">中止程序</button>
+                                    <button onClick={handleImport} className="eva-btn eva-btn-primary flex-1 py-3 text-[10px]">執行同步</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
+                            <div className="eva-border w-full max-w-sm p-6 bg-[#0D0D0D]">
+                                <div className="flex justify-between items-center mb-6 border-b border-[#BFFF00] pb-2 text-[#BFFF00]">
+                                    <h2 className="text-xs font-bold tracking-[0.2em]">{editingId ? '修改目標資料紀錄' : '紀錄目標資料輸入'}</h2>
+                                    <button onClick={closeModal}><Icon name="x" size={16} /></button>
+                                </div>
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Brand / Shop</label>
+                                        <input list="brand-list" className="eva-input w-full text-sm font-bold" placeholder="請選擇或輸入品牌" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} required />
+                                        <datalist id="brand-list">{commonBrands.map(b => <option key={b} value={b} />)}</datalist>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Item Name</label>
+                                            <input className="eva-input w-full text-sm" placeholder="飲品名稱" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Size</label>
+                                            <select className="eva-input w-full text-xs font-bold" value={formData.size} onChange={e => setFormData({...formData, size: e.target.value})}>{sizeOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Sugar</label>
+                                            <select className="eva-input w-full text-xs font-bold" value={formData.sugar} onChange={e => setFormData({...formData, sugar: e.target.value})}>{sugarOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Ice Level</label>
+                                            <select className="eva-input w-full text-xs font-bold" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})}>{iceOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between p-3 border border-[#7030A0]/50 bg-[#7030A0]/5">
+                                        <span className="text-[10px] font-bold text-[#BFFF00] uppercase">Eco-Cup Reward</span>
+                                        <div onClick={() => setFormData({...formData, isEcoFriendly: !formData.isEcoFriendly})} className={`w-11 h-5 border border-[#BFFF00] relative cursor-pointer ${formData.isEcoFriendly ? 'bg-[#BFFF00]' : 'bg-transparent'}`}>
+                                            <div className={`absolute top-0.5 w-3.5 h-3 bg-white transition-transform ${formData.isEcoFriendly ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Base Price</label>
+                                        <input type="number" className="eva-input w-full text-xl font-black italic text-[#BFFF00]" placeholder="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required />
+                                    </div>
+                                    <button type="submit" className="eva-btn eva-btn-primary w-full py-4 text-sm mt-4 tracking-[0.5em]">{editingId ? '執行更新程序' : '執行紀錄程序'}</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <footer className="mt-12 mb-6 opacity-30 text-[8px] text-center tracking-[0.4em] uppercase">MAGI-01 SYSTEM NOMINAL / 2025 LOGS</footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
