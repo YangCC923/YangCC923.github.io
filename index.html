@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRINKS IMPACT</title>
+    <title>DRINKS IMPACT - 初號機專用介面</title>
     <!-- 載入 React 與 Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -120,7 +120,7 @@
          * 如果你想開啟雲端同步功能，請填寫下方的用戶自定義 Firebase 設定。
          * 否則 App 將自動切換為瀏覽器本地儲存模式（Offline Mode）。
          */
-        const USER_CUSTOM_FIREBASE_CONFIG = null; // 格式如: { apiKey: "...", authDomain: "...", ... }
+        const USER_CUSTOM_FIREBASE_CONFIG = null; 
 
         const { useState, useEffect, useMemo } = React;
 
@@ -159,18 +159,15 @@
             const sugarOptions = ['無糖', '微糖', '半糖', '少糖', '全糖'];
             const iceOptions = ['去冰', '微冰', '少冰', '正常', '溫熱'];
 
-            // 安全獲取變數
             const getVar = (key, fallback) => {
                 try { return typeof window[key] !== 'undefined' ? window[key] : fallback; } catch { return fallback; }
             };
 
-            // 初始化邏輯
             useEffect(() => {
                 const envConfig = getVar('__firebase_config', null);
                 const config = envConfig ? JSON.parse(envConfig) : USER_CUSTOM_FIREBASE_CONFIG;
                 
                 if (!config) {
-                    // GitHub Offline 模式
                     const saved = localStorage.getItem('boba_impact_v5_gh');
                     if (saved) setDrinks(JSON.parse(saved));
                     setIsCloudEnabled(false);
@@ -193,7 +190,6 @@
                 return () => unsubscribe();
             }, []);
 
-            // 資料同步
             useEffect(() => {
                 if (!user || !isCloudEnabled) return;
                 const { getFirestore, doc, onSnapshot } = window.FirebaseSDK;
@@ -278,7 +274,7 @@
             if (isSyncing) return (
                 <div className="h-screen flex flex-col items-center justify-center bg-black">
                     <EvaUnit01Icon />
-                    <p className="mt-4 text-[10px] tracking-[0.5em] animate-pulse">MAGI SYSTEM INITIALIZING...</p>
+                    <p className="mt-4 text-[10px] tracking-[0.5em] animate-pulse">MAGI 系統初始化中...</p>
                 </div>
             );
 
@@ -288,8 +284,8 @@
                         <div className="warning-stripe h-2.5 w-full mb-4"></div>
                         <div className="flex justify-between items-end pb-2">
                             <div>
-                                <p className="text-[10px] font-bold tracking-[0.3em] text-[#BFFF00] animate-pulse uppercase">MAGI SYSTEM / {isCloudEnabled ? 'CLOUD' : 'OFFLINE'} MODE</p>
-                                <h1 className="text-2xl font-black italic tracking-tighter text-[#BFFF00]">BOBA IMPACT</h1>
+                                <p className="text-[10px] font-bold tracking-[0.3em] text-[#BFFF00] animate-pulse uppercase">MAGI 系統 / {isCloudEnabled ? '雲端同步' : '離線存取'} 模式</p>
+                                <h1 className="text-2xl font-black italic tracking-tighter text-[#BFFF00]">DRINKS IMPACT</h1>
                             </div>
                             <button onClick={() => setShowImportModal(true)} className="eva-btn px-4 py-1 text-[10px] mb-1">批次匯入</button>
                         </div>
@@ -298,7 +294,7 @@
                     <main className="mt-6 px-4">
                         <div className="grid grid-cols-2 gap-4 mb-10 text-center">
                             <div className="eva-border p-4">
-                                <p className="text-[9px] font-bold text-[#BFFF00]/60 mb-1 tracking-widest">今日同步率 (消耗)</p>
+                                <p className="text-[9px] font-bold text-[#BFFF00]/60 mb-1 tracking-widest">今日資源消耗同步率</p>
                                 <div className="flex items-baseline justify-center gap-1 text-[#BFFF00]">
                                     <span className="text-2xl font-black italic">${stats.todayTotal}</span>
                                     <span className="text-[8px] opacity-50 font-bold tracking-tighter">YEN</span>
@@ -308,7 +304,7 @@
                                 </div>
                             </div>
                             <div className="eva-border p-4 border-[#FF9500]">
-                                <p className="text-[9px] font-bold text-[#FF9500]/60 mb-1 tracking-widest">年度總衝擊 (2025)</p>
+                                <p className="text-[9px] font-bold text-[#FF9500]/60 mb-1 tracking-widest">2025 年度總衝擊</p>
                                 <div className="flex items-baseline justify-center gap-1 text-[#FF9500]">
                                     <span className="text-2xl font-black italic">${stats.yearlyTotal}</span>
                                     <span className="text-[8px] opacity-50 font-bold tracking-tighter">T.P</span>
@@ -322,7 +318,7 @@
                         <div className="space-y-4">
                             {drinks.length === 0 ? (
                                 <div className="text-center py-20 border-2 border-dashed border-[#7030A0]/30 rounded-lg">
-                                    <p className="text-xs font-bold italic tracking-[0.3em] text-[#7030A0]">NO RECORDS DETECTED</p>
+                                    <p className="text-xs font-bold italic tracking-[0.3em] text-[#7030A0]">未偵測到目標紀錄</p>
                                 </div>
                             ) : drinks.sort((a,b) => new Date(b.dateKey) - new Date(a.dateKey)).map(drink => {
                                 const parts = drink.dateKey.split('/');
@@ -334,7 +330,7 @@
                                             <div className="flex justify-between items-center relative z-10">
                                                 <div className="flex gap-4 items-center min-w-0">
                                                     <div className="text-center border-r border-[#7030A0]/50 pr-4 shrink-0">
-                                                        <p className="text-[8px] text-[#7030A0] font-bold uppercase tracking-tighter">DATE</p>
+                                                        <p className="text-[8px] text-[#7030A0] font-bold uppercase tracking-tighter">日期</p>
                                                         <p className="text-base font-black italic text-[#BFFF00] tracking-tighter">{parts[1]}/{parts[2]}</p>
                                                     </div>
                                                     <div className="min-w-0">
@@ -353,12 +349,12 @@
                                                     {drink.isEcoFriendly && (
                                                         <div className="text-[9px] font-bold text-[#00FF00] flex items-center gap-1.5 animate-pulse uppercase tracking-tighter">
                                                             <div className="w-1 h-3 bg-[#00FF00]"></div>
-                                                            ECO-CUP BONUS -$5
+                                                            環保補給獎勵 -$5
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="flex gap-4 items-center shrink-0">
-                                                    {copyMsg === drink.id && <span className="text-[8px] font-bold text-[#BFFF00] bg-[#000] px-1 copy-feedback shadow-[0_0_5px_#BFFF00] uppercase tracking-tighter">COPIED</span>}
+                                                    {copyMsg === drink.id && <span className="text-[8px] font-bold text-[#BFFF00] bg-[#000] px-1 copy-feedback shadow-[0_0_5px_#BFFF00] uppercase tracking-tighter">已複製</span>}
                                                     <button onClick={() => { setEditingId(drink.id); setFormData({ ...drink, price: drink.isEcoFriendly ? drink.finalPrice + 5 : drink.finalPrice }); setShowAddModal(true); }} className="text-gray-500 hover:text-blue-400 transition-colors p-1"><Icon name="edit-3" size={16} /></button>
                                                     <button onClick={() => handleCopy(drink)} className="text-gray-500 hover:text-[#BFFF00] transition-colors p-1"><Icon name="copy" size={16} /></button>
                                                     <button onClick={() => { const u = drinks.filter(d => d.id !== drink.id); setDrinks(u); saveData(u); }} className="text-gray-700 hover:text-red-500 transition-colors p-1"><Icon name="trash-2" size={16} /></button>
@@ -380,13 +376,13 @@
                         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
                             <div className="eva-border w-full max-w-sm p-6 bg-[#0D0D0D] shadow-2xl">
                                 <div className="flex justify-between items-center mb-6 border-b border-[#BFFF00] pb-2 text-[#BFFF00]">
-                                    <h2 className="text-xs font-bold tracking-[0.2em] uppercase">SYNC MASSIVE DATA</h2>
+                                    <h2 className="text-xs font-bold tracking-[0.2em] uppercase">大量數據同步程序</h2>
                                     <button onClick={() => setShowImportModal(false)}><Icon name="x" size={16} /></button>
                                 </div>
                                 <textarea className="eva-input w-full h-48 text-[10px] font-mono mb-4 no-scrollbar leading-relaxed" placeholder="貼上資料內容... (自動識別日期/品牌/品項/價格)" value={importText} onChange={e => setImportText(e.target.value)} />
                                 <div className="flex gap-3">
-                                    <button onClick={() => setShowImportModal(false)} className="eva-btn flex-1 py-3 text-[10px] tracking-widest">ABORT</button>
-                                    <button onClick={handleImport} className="eva-btn eva-btn-primary flex-1 py-3 text-[10px] tracking-[0.3em]">EXECUTE</button>
+                                    <button onClick={() => setShowImportModal(false)} className="eva-btn flex-1 py-3 text-[10px] tracking-widest">中止程序</button>
+                                    <button onClick={handleImport} className="eva-btn eva-btn-primary flex-1 py-3 text-[10px] tracking-[0.3em]">執行同步</button>
                                 </div>
                             </div>
                         </div>
@@ -396,52 +392,52 @@
                         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
                             <div className="eva-border w-full max-w-sm p-6 bg-[#0D0D0D] shadow-2xl">
                                 <div className="flex justify-between items-center mb-6 border-b border-[#BFFF00] pb-2 text-[#BFFF00]">
-                                    <h2 className="text-xs font-bold tracking-[0.2em] uppercase">{editingId ? 'UPDATE TARGET LOG' : 'INPUT TARGET LOG'}</h2>
+                                    <h2 className="text-xs font-bold tracking-[0.2em] uppercase">{editingId ? '修改目標資料紀錄' : '紀錄目標資料輸入'}</h2>
                                     <button onClick={() => { setShowAddModal(false); setEditingId(null); setFormData({ brand: '', name: '', size: 'L', sugar: '無糖', ice: '少冰', isEcoFriendly: false, price: '' }); }}><Icon name="x" size={16} /></button>
                                 </div>
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="space-y-1">
-                                        <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Brand / Shop</label>
+                                        <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">店家名稱 / 品牌</label>
                                         <input list="brand-list" className="eva-input w-full text-sm font-bold" placeholder="選取或手動輸入品牌" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} required />
                                         <datalist id="brand-list">{commonBrands.map(b => <option key={b} value={b} />)}</datalist>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Item Name</label>
+                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">飲品名稱</label>
                                             <input className="eva-input w-full text-sm" placeholder="飲品名稱" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Size</label>
+                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">容量</label>
                                             <select className="eva-input w-full text-xs font-bold" value={formData.size} onChange={e => setFormData({...formData, size: e.target.value})}>{sizeOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Sugar</label>
+                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">甜度</label>
                                             <select className="eva-input w-full text-xs font-bold" value={formData.sugar} onChange={e => setFormData({...formData, sugar: e.target.value})}>{sugarOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Ice</label>
+                                            <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">冰塊</label>
                                             <select className="eva-input w-full text-xs font-bold" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})}>{iceOptions.map(o => <option key={o} value={o}>{o}</option>)}</select>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between p-3 border border-[#7030A0]/50 bg-[#7030A0]/5">
-                                        <span className="text-[10px] font-bold text-[#BFFF00] uppercase tracking-widest">Eco-Cup Reward</span>
+                                        <span className="text-[10px] font-bold text-[#BFFF00] uppercase tracking-widest">環保杯折扣補給</span>
                                         <div onClick={() => setFormData({...formData, isEcoFriendly: !formData.isEcoFriendly})} className={`w-11 h-5 border border-[#BFFF00] relative cursor-pointer ${formData.isEcoFriendly ? 'bg-[#BFFF00]' : 'bg-transparent'}`}>
                                             <div className={`absolute top-0.5 w-3.5 h-3 bg-white transition-transform ${formData.isEcoFriendly ? 'translate-x-6' : 'translate-x-0.5'}`} />
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">Unit Price</label>
+                                        <label className="text-[9px] font-bold text-[#7030A0] tracking-widest uppercase">單價 (原價)</label>
                                         <input type="number" className="eva-input w-full text-xl font-black italic text-[#BFFF00]" placeholder="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required />
                                     </div>
-                                    <button type="submit" className="eva-btn eva-btn-primary w-full py-4 text-sm mt-4 tracking-[0.5em] uppercase">{editingId ? 'EXECUTE UPDATE' : 'EXECUTE LOG'}</button>
+                                    <button type="submit" className="eva-btn eva-btn-primary w-full py-4 text-sm mt-4 tracking-[0.5em] uppercase">{editingId ? '執行更新程序' : '執行紀錄程序'}</button>
                                 </form>
                             </div>
                         </div>
                     )}
                     
-                    <footer className="mt-12 mb-6 opacity-30 text-[8px] text-center tracking-[0.4em] uppercase">MAGI-01 SYSTEM NOMINAL / 2025 RECORDS</footer>
+                    <footer className="mt-12 mb-6 opacity-30 text-[8px] text-center tracking-[0.4em] uppercase">MAGI-01 系統正常運作 / 2025 紀錄存檔</footer>
                 </div>
             );
         };
@@ -450,5 +446,4 @@
         root.render(<App />);
     </script>
 </body>
-
 </html>
