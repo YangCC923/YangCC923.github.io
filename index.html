@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DRINKS IMPACT</title>
+    <title>DRINKS IMPACT - 初號機視覺版</title>
+    
     <!-- 初號機 Favicon 設定 -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M25 45 L35 15 L45 35 L85 50 L80 75 L40 70 Z' fill='%237030A0' stroke='%23000' stroke-width='1'/%3E%3Cpath d='M45 48 Q50 45 55 48 L53 52 Q50 50 47 52 Z' fill='%23BFFF00'/%3E%3C/svg%3E">
+    
     <!-- 載入 React 與 Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <!-- 載入 Lucide 圖示庫 -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
     <!-- 載入 Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -95,6 +100,11 @@
             outline: none;
         }
 
+        .eva-input:focus {
+            border-color: var(--eva-green);
+            box-shadow: 0 0 8px rgba(191, 255, 0, 0.3);
+        }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -112,15 +122,22 @@
         }
         .fab-eva:hover { transform: scale(1.1); box-shadow: 0 0 30px var(--eva-green); border-color: var(--eva-green); }
         
-        .copy-feedback { animation: fadeOut 1.5s forwards; }
-        @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
-
         @keyframes eye-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
         .eye-animate { animation: eye-glow 2s infinite; }
 
         .hexagon-bg {
             clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
             background: rgba(112, 48, 160, 0.1);
+        }
+
+        /* 新增 Toast 動畫 */
+        @keyframes toast-in {
+            from { transform: translateY(-100%) translateX(-50%); opacity: 0; }
+            to { transform: translateY(20px) translateX(-50%); opacity: 1; }
+        }
+        .eva-toast {
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+            z-index: 200; animation: toast-in 0.3s forwards;
         }
     </style>
 </head>
@@ -130,19 +147,18 @@
 
     <script type="text/babel">
         /**
-         * --- MAGI 系統 GitHub 部署核心配置 ---
+         * --- MAGI 系統 GitHub 部署配置 ---
          * 請在此填入你的 Firebase 設定
          */
         const USER_CUSTOM_FIREBASE_CONFIG = {
-          apiKey: "AIzaSyDgkib808v3x6Pwo4AFx7HVKy0ivBTMyDg",
-          authDomain: "yangcc923-6f1b1.firebaseapp.com",
-          projectId: "yangcc923-6f1b1",
-          storageBucket: "yangcc923-6f1b1.firebasestorage.app",
-          messagingSenderId: "316164615380",
-          appId: "1:316164615380:web:a9ac92e1669d5279515f41",
-          measurementId: "G-3XGVRY53WX"
+            apiKey: "AIzaSyDgkib808v3x6Pwo4AFx7HVKy0ivBTMyDg",
+            authDomain: "yangcc923-6f1b1.firebaseapp.com",
+            projectId: "yangcc923-6f1b1",
+            storageBucket: "yangcc923-6f1b1.firebasestorage.app",
+            messagingSenderId: "316164615380",
+            appId: "1:316164615380:web:a9ac92e1669d5279515f41",
+            measurementId: "G-3XGVRY53WX"
         };
-
         
         const { useState, useEffect, useMemo, useRef } = React;
 
@@ -151,8 +167,9 @@
             return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
         };
 
-        const EvaUnit01Icon = () => (
-            <svg viewBox="0 0 100 100" className="w-12 h-12">
+        // 初號機頭部 SVG 元件
+        const EvaUnit01Icon = ({ className = "w-12 h-12" }) => (
+            <svg viewBox="0 0 100 100" className={className}>
                 <path d="M30 70 L40 90 L70 90 L80 70 L60 65 Z" fill="#3A1F5D" />
                 <path d="M25 45 L35 15 L45 35 L85 50 L80 75 L40 70 Z" fill="#7030A0" stroke="#000" strokeWidth="1" />
                 <path d="M35 15 L25 5 L30 15 Z" fill="#7030A0" />
@@ -173,10 +190,10 @@
             const [editingId, setEditingId] = useState(null);
             const [importText, setImportText] = useState('');
             const [formData, setFormData] = useState({ brand: '', name: '', size: 'L', sugar: '無糖', ice: '少冰', topping: '', isEcoFriendly: false, price: '' });
-            const [copyMsg, setCopyMsg] = useState(null);
             const [isCloudEnabled, setIsCloudEnabled] = useState(false);
+            const [toast, setToast] = useState(null); // 新增 Toast 狀態
             
-            // 登入表單狀態
+            // 登入狀態
             const [loginEmail, setLoginEmail] = useState('');
             const [loginPassword, setLoginPassword] = useState('');
             const [authError, setAuthError] = useState('');
@@ -188,6 +205,12 @@
             const sizeOptions = ['M', 'L', 'XL', '瓶裝', '固定'];
             const sugarOptions = ['無糖', '微糖', '半糖', '少糖', '全糖'];
             const iceOptions = ['去冰', '微冰', '少冰', '正常', '溫熱'];
+
+            // 顯示 Toast 提示
+            const showToast = (msg, type = 'success') => {
+                setToast({ msg, type });
+                setTimeout(() => setToast(null), 3000);
+            };
 
             // 1. 初始化 Firebase 與偵測登入狀態
             useEffect(() => {
@@ -205,7 +228,6 @@
                 const app = initializeApp(USER_CUSTOM_FIREBASE_CONFIG);
                 const auth = getAuth(app);
                 
-                // 設定持久化登入 (下次打開網站會自動登入)
                 setPersistence(auth, browserLocalPersistence).then(() => {
                     return onAuthStateChanged(auth, (u) => {
                         setUser(u);
@@ -239,6 +261,7 @@
                 const auth = getAuth();
                 try {
                     await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+                    showToast("同步系統鏈結成功");
                 } catch (err) {
                     setAuthError("身分驗證失敗：請檢查帳號密碼");
                 } finally {
@@ -282,10 +305,14 @@
                     return parseInt(y) === targetYear;
                 }).reduce((sum, d) => sum + d.finalPrice, 0);
 
+                // 累計環保省下的錢
+                const totalEcoSavings = drinks.filter(d => d.isEcoFriendly).length * 5;
+
                 return {
                     todayTotal: drinks.filter(d => d.dateKey === todayKey).reduce((sum, d) => sum + d.finalPrice, 0),
                     monthTotal: monthTotal,
-                    yearTotal: yearTotal
+                    yearTotal: yearTotal,
+                    totalEcoSavings: totalEcoSavings
                 };
             }, [drinks, viewDate]);
 
@@ -302,14 +329,29 @@
                 let updated;
                 if (editingId) {
                     updated = drinks.map(d => d.id === editingId ? { ...d, ...formData, finalPrice: finalP } : d);
+                    showToast("目標紀錄已修正");
                 } else {
                     updated = [{ id: Date.now(), dateKey: new Date().toLocaleDateString('zh-TW'), ...formData, finalPrice: finalP }, ...drinks];
+                    showToast("資源補給紀錄完成");
                 }
                 setDrinks(updated);
                 await saveData(updated);
                 setShowAddModal(false); 
                 setEditingId(null);
                 setFormData({ brand: '', name: '', size: 'L', sugar: '無糖', ice: '少冰', topping: '', isEcoFriendly: false, price: '' });
+            };
+
+            // 「再來一杯」功能
+            const handleQuickAdd = async (oldDrink) => {
+                const newRecord = {
+                    ...oldDrink,
+                    id: Date.now(),
+                    dateKey: new Date().toLocaleDateString('zh-TW'),
+                };
+                const updated = [newRecord, ...drinks];
+                setDrinks(updated);
+                await saveData(updated);
+                showToast(`${oldDrink.brand} 再來一杯成功`);
             };
 
             const handleImport = () => {
@@ -325,88 +367,59 @@
 
                     let sz = 'L', sug = '無糖', ice = '少冰', top = '', pr = 0;
 
-                    // 1. 識別價格 (最後一個數字)
                     for (let i = pts.length - 1; i >= 0; i--) { 
                         const val = parseInt(pts[i]); if (!isNaN(val)) { pr = val; break; } 
                     }
 
-                    // 2. 識別日期
                     const datePts = pts[0].split('/'); 
                     const m = datePts[datePts.length - 2] || (new Date().getMonth() + 1);
                     const d = datePts[datePts.length - 1];
                     const y = datePts.length === 3 ? datePts[0] : currentYear;
 
-                    // 3. 品牌與品項
-                    const brand = pts[1];
-                    const itemName = pts[2];
+                    if (pts[3] && sizeOptions.includes(pts[3])) sz = pts[3];
 
-                    // 4. 偵測容量與細節 (無糖少冰+珍珠)
                     pts.forEach(p => {
-                        if (sizeOptions.includes(p)) sz = p;
                         if (sugarOptions.some(s => p.includes(s))) sug = sugarOptions.find(s => p.includes(s));
                         if (iceOptions.some(i => p.includes(i))) ice = iceOptions.find(i => p.includes(i));
                         if (p.includes('+')) top = p.split('+')[1];
                     });
 
                     newItems.push({
-                        id: Date.now() + index, dateKey: `${y}/${m}/${d}`, brand, name: itemName, size: sz,
-                        sugar: sug, ice, topping: top,
+                        id: Date.now() + index, dateKey: `${y}/${m}/${d}`, brand: pts[1], name: pts[2], size: sz,
+                        sugar: sug, ice: ice, topping: top,
                         isEcoFriendly: trimmedLine.includes('環保杯'), finalPrice: pr
                     });
                 });
                 const updated = [...newItems, ...drinks]; 
                 setDrinks(updated); saveData(updated);
                 setShowImportModal(false); setImportText('');
+                showToast(`大量數據匯入完成 (共 ${newItems.length} 筆)`);
             };
 
-            // 系統初始化畫面
-            if (isSyncing) {
+            if (isSyncing || (isCloudEnabled && !user)) {
                 return (
                     <div className="h-screen flex flex-col items-center justify-center bg-black text-center p-10">
                         <EvaUnit01Icon />
-                        <p className="mt-4 text-[10px] tracking-[0.5em] animate-pulse text-[#BFFF00] uppercase">MAGI 系統初始化中...</p>
-                    </div>
-                );
-            }
-
-            // 登入介面
-            if (isCloudEnabled && !user) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center p-6 bg-black relative">
-                        <div className="eva-border w-full max-w-sm p-8 bg-[#0D0D0D] shadow-2xl z-10">
-                            <div className="flex flex-col items-center mb-8 text-center">
-                                <EvaUnit01Icon />
-                                <h1 className="text-2xl font-black italic tracking-tighter text-[#BFFF00] mt-4 uppercase">Drinks Impact</h1>
-                                <p className="text-[10px] text-[#7030A0] font-bold mt-1 tracking-[0.3em] uppercase">身分驗證程序啟動</p>
-                            </div>
-                            <form onSubmit={handleLogin} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">E-mail</label>
-                                    <input type="email" className="eva-input w-full" placeholder="輸入電子郵件" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">Access Key</label>
-                                    <input type="password" className="eva-input w-full" placeholder="輸入存取密碼" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required />
-                                </div>
-                                {authError && <p className="text-red-500 text-[10px] font-bold italic animate-pulse">ERROR: {authError}</p>}
-                                <button type="submit" disabled={isLoggingIn} className="eva-btn eva-btn-primary w-full py-4 text-sm tracking-[0.5em] disabled:opacity-50">
-                                    {isLoggingIn ? '驗證中...' : '執行登入程序'}
-                                </button>
-                                <p className="text-[8px] text-gray-600 text-center uppercase tracking-tighter">系統將自動記住此設備的身分憑證</p>
-                            </form>
-                        </div>
+                        <p className="mt-4 text-[10px] tracking-[0.5em] animate-pulse text-[#BFFF00] uppercase">MAGI 系統初始化 / 身分驗證中</p>
                     </div>
                 );
             }
 
             return (
                 <div className="max-w-md mx-auto min-h-screen pb-32 relative">
+                    {/* Toast 提示元件 */}
+                    {toast && (
+                        <div className={`eva-toast eva-border px-6 py-2 bg-black shadow-[0_0_20px_var(--eva-purple)] text-xs font-bold tracking-widest ${toast.type === 'error' ? 'text-red-500' : 'text-[#BFFF00]'}`}>
+                            {toast.msg}
+                        </div>
+                    )}
+
                     <header className="pt-8 pb-4 px-4 sticky top-0 z-40 bg-[#0D0D0D] border-b-2 border-[#7030A0]">
                         <div className="warning-stripe h-2.5 w-full mb-4"></div>
                         <div className="flex justify-between items-end pb-2 gap-2">
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
-                                    <p className="text-[10px] font-bold tracking-[0.3em] text-[#BFFF00] animate-pulse truncate">MAGI / {user?.email || 'OFFLINE'}</p>
+                                    <p className="text-[10px] font-bold tracking-[0.3em] text-[#BFFF00] animate-pulse truncate uppercase">MAGI / {user?.email || 'OFFLINE'}</p>
                                     <span className={`text-[7px] px-1 font-bold ${isCloudEnabled ? 'bg-green-600' : 'bg-red-600'} text-white uppercase`}>
                                         {isCloudEnabled ? '雲端同步中' : '離線模式'}
                                     </span>
@@ -416,31 +429,37 @@
                             <div className="flex flex-col items-end gap-2 shrink-0">
                                 <button onClick={() => setShowImportModal(true)} className="eva-btn px-4 py-1 text-[10px]">批次匯入</button>
                                 {isCloudEnabled && (
-                                    <button onClick={async () => { await window.FirebaseSDK.signOut(window.FirebaseSDK.getAuth()); location.reload(); }} className="text-[7px] text-gray-600 hover:text-red-500 border border-gray-800 px-1 uppercase">登出系統</button>
+                                    <button onClick={async () => { await window.FirebaseSDK.signOut(window.FirebaseSDK.getAuth()); location.reload(); }} className="text-[7px] text-gray-600 hover:text-red-500 border border-gray-800 px-1 uppercase">登出</button>
                                 )}
                             </div>
                         </div>
                     </header>
 
                     <main className="mt-6 px-4">
-                        <div className="grid grid-cols-2 gap-4 mb-6 text-center">
-                            <div className="eva-border p-4 text-center">
-                                <p className="text-[9px] font-bold text-[#BFFF00]/60 mb-1 tracking-widest uppercase text-center">今日消耗同步率</p>
+                        <div className="grid grid-cols-2 gap-4 mb-4 text-center">
+                            <div className="eva-border p-4">
+                                <p className="text-[9px] font-bold text-[#BFFF00]/60 mb-1 tracking-widest uppercase">今日消耗</p>
                                 <div className="flex items-baseline justify-center gap-1 text-[#BFFF00]"><span className="text-2xl font-black italic">${stats.todayTotal}</span><span className="text-[8px] opacity-50 font-bold">YEN</span></div>
                                 <div className="w-full h-1 bg-[#1A1A1A] mt-2 overflow-hidden"><div className="h-full bg-[#BFFF00] shadow-[0_0_5px_#BFFF00]" style={{ width: '40%' }}></div></div>
                             </div>
-                            <div className="eva-border p-4 border-[#FF9500] text-center">
-                                <p className="text-[9px] font-bold text-[#FF9500]/60 mb-1 tracking-widest uppercase text-center">{viewDate.getFullYear()} 年度總衝擊</p>
+                            <div className="eva-border p-4 border-[#FF9500]">
+                                <p className="text-[9px] font-bold text-[#FF9500]/60 mb-1 tracking-widest uppercase">{viewDate.getFullYear()} 年度累計</p>
                                 <div className="flex items-baseline justify-center gap-1 text-[#FF9500]"><span className="text-2xl font-black italic">${stats.yearTotal}</span><span className="text-[8px] opacity-50 font-bold">T.P</span></div>
                                 <div className="w-full h-1 bg-[#1A1A1A] mt-2 overflow-hidden"><div className="h-full bg-[#FF9500] shadow-[0_0_5px_#FF9500]" style={{ width: '65%' }}></div></div>
                             </div>
+                        </div>
+
+                        {/* 新增：環保累計獎勵展示 */}
+                        <div className="eva-border p-2 mb-6 border-[#00FF00]/40 flex justify-center items-center gap-3 bg-[#00FF00]/5">
+                            <Icon name="leaf" size={14} className="text-[#00FF00]" />
+                            <p className="text-[10px] font-bold text-[#00FF00] tracking-widest uppercase">已累計節省資源金：${stats.totalEcoSavings} YEN</p>
                         </div>
 
                         <div className="eva-border bg-[#111] p-2 mb-8 flex justify-between items-center">
                             <button onClick={() => changeMonth(-1)} className="eva-btn px-3 py-1 hover:text-[#BFFF00]"><Icon name="chevron-left" size={16} /></button>
                             <div className="text-center">
                                 <p className="text-[14px] font-black italic tracking-widest text-[#BFFF00]">{viewDate.getFullYear()} / {viewDate.getMonth() + 1}</p>
-                                <p className="text-[9px] text-[#7030A0] font-bold uppercase tracking-tighter">月累積同步: ${stats.monthTotal}</p>
+                                <p className="text-[9px] text-[#7030A0] font-bold uppercase tracking-tighter">月累計消耗: ${stats.monthTotal}</p>
                             </div>
                             <button onClick={() => changeMonth(1)} className="eva-btn px-3 py-1 hover:text-[#BFFF00]"><Icon name="chevron-right" size={16} /></button>
                         </div>
@@ -448,7 +467,7 @@
                         <div className="space-y-4">
                             {filteredDrinks.length === 0 ? (
                                 <div className="text-center py-20 border-2 border-dashed border-[#7030A0]/30 rounded-lg opacity-40">
-                                    <p className="text-xs font-bold italic tracking-[0.3em] uppercase">無補給紀錄偵測</p>
+                                    <p className="text-xs font-bold italic tracking-[0.3em] uppercase">無目標資料</p>
                                 </div>
                             ) : filteredDrinks.map(drink => (
                                 <div key={drink.id} className="relative group">
@@ -477,12 +496,17 @@
                                         <div className="absolute bottom-2 left-4 right-2 flex justify-between items-end z-20">
                                             <div className="min-w-0 pr-2">
                                                 {drink.isEcoFriendly && (
-                                                    <div className="text-[9px] font-bold text-[#00FF00] flex items-center gap-1.5 animate-pulse uppercase tracking-tighter"><div className="w-1 h-3 bg-[#00FF00]"></div>補給獎勵 -$5</div>
+                                                    <div className="text-[9px] font-bold text-[#00FF00] flex items-center gap-1.5 animate-pulse uppercase"><div className="w-1 h-3 bg-[#00FF00]"></div>補給獎勵 -$5</div>
                                                 )}
                                             </div>
-                                            <div className="flex gap-4 items-center shrink-0">
-                                                <button onClick={() => { setEditingId(drink.id); setFormData({ ...drink, price: drink.isEcoFriendly ? drink.finalPrice + 5 : drink.finalPrice }); setShowAddModal(true); }} className="text-gray-600 hover:text-blue-400 p-1"><Icon name="edit-3" size={16} /></button>
-                                                <button onClick={() => { if(confirm('確認移除紀錄？')) { const u = drinks.filter(d => d.id !== drink.id); setDrinks(u); saveData(u); } }} className="text-gray-700 hover:text-red-500 p-1"><Icon name="trash-2" size={16} /></button>
+                                            <div className="flex gap-2 items-center shrink-0">
+                                                {/* 新增：再來一杯按鈕 */}
+                                                <button onClick={() => handleQuickAdd(drink)} className="text-gray-600 hover:text-green-400 p-1 flex items-center gap-1" title="再來一杯">
+                                                    <Icon name="refresh-cw" size={14} />
+                                                    <span className="text-[8px] font-bold uppercase">Repeat</span>
+                                                </button>
+                                                <button onClick={() => { setEditingId(drink.id); setFormData({ ...drink, price: drink.isEcoFriendly ? drink.finalPrice + 5 : drink.finalPrice }); setShowAddModal(true); }} className="text-gray-600 hover:text-blue-400 p-1"><Icon name="edit-3" size={14} /></button>
+                                                <button onClick={async () => { if(confirm('確認移除該紀錄？')) { const u = drinks.filter(d => d.id !== drink.id); setDrinks(u); await saveData(u); showToast("紀錄已從磁軌抹除", "error"); } }} className="text-gray-700 hover:text-red-500 p-1"><Icon name="trash-2" size={14} /></button>
                                             </div>
                                         </div>
                                     </div>
@@ -499,7 +523,7 @@
                         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
                             <div className="eva-border w-full max-w-sm p-6 bg-[#0D0D0D]">
                                 <div className="flex justify-between items-center mb-6 border-b border-[#BFFF00] pb-2 text-[#BFFF00]"><h2 className="text-xs font-bold tracking-[0.2em] uppercase">批量數據同步程序</h2><button onClick={() => setShowImportModal(false)}><Icon name="x" size={16} /></button></div>
-                                <textarea className="eva-input w-full h-48 text-[10px] font-mono mb-4 no-scrollbar leading-relaxed" placeholder="1/6 清心福全 錫蘭紅茶 L 無糖少冰+珍珠 40" value={importText} onChange={e => setImportText(e.target.value)} />
+                                <textarea className="eva-input w-full h-48 text-[10px] font-mono mb-4 no-scrollbar leading-relaxed" placeholder="範例：1/6 清心福全 錫蘭紅茶 L 無糖少冰+珍珠 40" value={importText} onChange={e => setImportText(e.target.value)} />
                                 <div className="flex gap-3"><button onClick={() => setShowImportModal(false)} className="eva-btn flex-1 py-3 text-[10px]">中斷</button><button onClick={handleImport} className="eva-btn eva-btn-primary flex-1 py-3 text-[10px]">執行</button></div>
                             </div>
                         </div>
@@ -510,18 +534,18 @@
                             <div className="eva-border w-full max-w-sm p-6 bg-[#0D0D0D] overflow-y-auto max-h-[90vh]">
                                 <div className="flex justify-between items-center mb-6 border-b border-[#BFFF00] pb-2 text-[#BFFF00]"><h2 className="text-xs font-bold tracking-[0.2em] uppercase">{editingId ? '修改現有紀錄' : '建立補給紀錄'}</h2><button onClick={() => { setShowAddModal(false); setEditingId(null); }}><Icon name="x" size={16} /></button></div>
                                 <form onSubmit={handleSubmit} className="space-y-4">
-                                    <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest text-center">品牌店家</label><input list="brand-list" className="eva-input w-full text-sm font-bold" placeholder="選取或輸入品牌" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} required /><datalist id="brand-list">{commonBrands.map(b => <option key={b} value={b} />)}</datalist></div>
+                                    <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">店家</label><input list="brand-list" className="eva-input w-full text-sm font-bold" placeholder="輸入或選取品牌" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} required /><datalist id="brand-list">{commonBrands.map(b => <option key={b} value={b} />)}</datalist></div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest text-center">品項名稱</label><input className="eva-input w-full text-sm" placeholder="飲品名稱" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required /></div>
-                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest text-center">容量</label><select className="eva-input w-full text-xs font-bold" value={formData.size} onChange={e => setFormData({...formData, size: e.target.value})}>{sizeOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
+                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">品項</label><input className="eva-input w-full text-sm" placeholder="飲品名稱" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required /></div>
+                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">容量</label><select className="eva-input w-full text-xs font-bold" value={formData.size} onChange={e => setFormData({...formData, size: e.target.value})}>{sizeOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest text-center">甜度</label><select className="eva-input w-full text-xs font-bold" value={formData.sugar} onChange={e => setFormData({...formData, sugar: e.target.value})}>{sugarOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
-                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest text-center">冰塊</label><select className="eva-input w-full text-xs font-bold" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})}>{iceOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
+                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">甜度</label><select className="eva-input w-full text-xs font-bold" value={formData.sugar} onChange={e => setFormData({...formData, sugar: e.target.value})}>{sugarOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
+                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">冰塊</label><select className="eva-input w-full text-xs font-bold" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})}>{iceOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
                                     </div>
-                                    <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest text-center">加料內容</label><input className="eva-input w-full text-sm" placeholder="珍珠、波霸、椰果..." value={formData.topping} onChange={e => setFormData({...formData, topping: e.target.value})} /></div>
-                                    <div className="flex items-center justify-between p-3 border border-[#7030A0]/50 bg-[#7030A0]/5"><span className="text-[10px] font-bold text-[#BFFF00] uppercase tracking-widest">環保杯折扣補給</span><div onClick={() => setFormData({...formData, isEcoFriendly: !formData.isEcoFriendly})} className={`w-10 h-5 border border-[#BFFF00] relative cursor-pointer ${formData.isEcoFriendly ? 'bg-[#BFFF00]' : 'bg-transparent'}`}><div className={`absolute top-0.5 w-3 h-3 bg-white transition-all ${formData.isEcoFriendly ? 'left-6' : 'left-1'}`} /></div></div>
-                                    <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest text-center">單價 (原價)</label><input type="number" className="eva-input w-full text-xl font-black italic text-[#BFFF00]" placeholder="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required /></div>
+                                    <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">加料</label><input className="eva-input w-full text-sm" placeholder="例如：珍珠、波霸" value={formData.topping} onChange={e => setFormData({...formData, topping: e.target.value})} /></div>
+                                    <div className="flex items-center justify-between p-3 border border-[#7030A0]/50 bg-[#7030A0]/5"><span className="text-[10px] font-bold text-[#BFFF00] uppercase tracking-widest">環保杯折扣</span><div onClick={() => setFormData({...formData, isEcoFriendly: !formData.isEcoFriendly})} className={`w-10 h-5 border border-[#BFFF00] relative cursor-pointer ${formData.isEcoFriendly ? 'bg-[#BFFF00]' : 'bg-transparent'}`}><div className={`absolute top-0.5 w-3 h-3 bg-white transition-all ${formData.isEcoFriendly ? 'left-6' : 'left-1'}`} /></div></div>
+                                    <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">單價 (原價)</label><input type="number" className="eva-input w-full text-xl font-black italic text-[#BFFF00]" placeholder="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required /></div>
                                     <button type="submit" className="eva-btn eva-btn-primary w-full py-4 text-sm mt-4 tracking-[0.5em] uppercase">{editingId ? '執行更新程序' : '執行紀錄程序'}</button>
                                 </form>
                             </div>
