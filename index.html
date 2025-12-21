@@ -130,7 +130,6 @@
             background: rgba(112, 48, 160, 0.1);
         }
 
-        /* 新增 Toast 動畫 */
         @keyframes toast-in {
             from { transform: translateY(-100%) translateX(-50%); opacity: 0; }
             to { transform: translateY(20px) translateX(-50%); opacity: 1; }
@@ -167,7 +166,6 @@
             return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
         };
 
-        // 初號機頭部 SVG 元件
         const EvaUnit01Icon = ({ className = "w-12 h-12" }) => (
             <svg viewBox="0 0 100 100" className={className}>
                 <path d="M30 70 L40 90 L70 90 L80 70 L60 65 Z" fill="#3A1F5D" />
@@ -191,9 +189,8 @@
             const [importText, setImportText] = useState('');
             const [formData, setFormData] = useState({ brand: '', name: '', size: 'L', sugar: '無糖', ice: '少冰', topping: '', isEcoFriendly: false, price: '' });
             const [isCloudEnabled, setIsCloudEnabled] = useState(false);
-            const [toast, setToast] = useState(null); // 新增 Toast 狀態
+            const [toast, setToast] = useState(null);
             
-            // 登入狀態
             const [loginEmail, setLoginEmail] = useState('');
             const [loginPassword, setLoginPassword] = useState('');
             const [authError, setAuthError] = useState('');
@@ -206,13 +203,11 @@
             const sugarOptions = ['無糖', '微糖', '半糖', '少糖', '全糖'];
             const iceOptions = ['去冰', '微冰', '少冰', '正常', '溫熱'];
 
-            // 顯示 Toast 提示
             const showToast = (msg, type = 'success') => {
                 setToast({ msg, type });
                 setTimeout(() => setToast(null), 3000);
             };
 
-            // 1. 初始化 Firebase 與偵測登入狀態
             useEffect(() => {
                 if (!USER_CUSTOM_FIREBASE_CONFIG || !USER_CUSTOM_FIREBASE_CONFIG.apiKey) {
                     const saved = localStorage.getItem('drinks_impact_github_local');
@@ -233,13 +228,9 @@
                         setUser(u);
                         setIsSyncing(false);
                     });
-                }).catch(err => {
-                    console.error("Persistence failed", err);
-                    setIsSyncing(false);
-                });
+                }).catch(() => setIsSyncing(false));
             }, []);
 
-            // 2. 雲端資料同步監聽
             useEffect(() => {
                 if (!user || !isCloudEnabled) return;
                 const { getFirestore, doc, onSnapshot } = window.FirebaseSDK;
@@ -258,9 +249,8 @@
                 setAuthError('');
                 setIsLoggingIn(true);
                 const { getAuth, signInWithEmailAndPassword } = window.FirebaseSDK;
-                const auth = getAuth();
                 try {
-                    await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+                    await signInWithEmailAndPassword(getAuth(), loginEmail, loginPassword);
                     showToast("同步系統鏈結成功");
                 } catch (err) {
                     setAuthError("身分驗證失敗：請檢查帳號密碼");
@@ -285,34 +275,34 @@
                 const targetYear = viewDate.getFullYear();
                 const targetMonth = viewDate.getMonth() + 1;
                 return drinks.filter(d => {
-                    const [y, m] = d.dateKey.split('/');
-                    return parseInt(y) === targetYear && parseInt(m) === targetMonth;
+                    const parts = d.dateKey.split('/');
+                    return parseInt(parts[0]) === targetYear && parseInt(parts[1]) === targetMonth;
                 }).sort((a,b) => new Date(b.dateKey) - new Date(a.dateKey));
             }, [drinks, viewDate]);
 
             const stats = useMemo(() => {
-                const todayKey = new Date().toLocaleDateString('zh-TW');
+                const now = new Date();
+                const todayKey = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
                 const targetYear = viewDate.getFullYear();
                 const targetMonth = viewDate.getMonth() + 1;
                 
                 const monthTotal = drinks.filter(d => {
-                    const [y, m] = d.dateKey.split('/');
-                    return parseInt(y) === targetYear && parseInt(m) === targetMonth;
+                    const parts = d.dateKey.split('/');
+                    return parseInt(parts[0]) === targetYear && parseInt(parts[1]) === targetMonth;
                 }).reduce((sum, d) => sum + d.finalPrice, 0);
 
                 const yearTotal = drinks.filter(d => {
-                    const [y] = d.dateKey.split('/');
-                    return parseInt(y) === targetYear;
+                    const parts = d.dateKey.split('/');
+                    return parseInt(parts[0]) === targetYear;
                 }).reduce((sum, d) => sum + d.finalPrice, 0);
 
-                // 累計環保省下的錢
                 const totalEcoSavings = drinks.filter(d => d.isEcoFriendly).length * 5;
 
                 return {
                     todayTotal: drinks.filter(d => d.dateKey === todayKey).reduce((sum, d) => sum + d.finalPrice, 0),
-                    monthTotal: monthTotal,
-                    yearTotal: yearTotal,
-                    totalEcoSavings: totalEcoSavings
+                    monthTotal,
+                    yearTotal,
+                    totalEcoSavings
                 };
             }, [drinks, viewDate]);
 
@@ -327,11 +317,14 @@
                 const baseP = parseInt(formData.price) || 0;
                 const finalP = formData.isEcoFriendly ? baseP - 5 : baseP;
                 let updated;
+                const now = new Date();
+                const dateKey = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+
                 if (editingId) {
                     updated = drinks.map(d => d.id === editingId ? { ...d, ...formData, finalPrice: finalP } : d);
                     showToast("目標紀錄已修正");
                 } else {
-                    updated = [{ id: Date.now(), dateKey: new Date().toLocaleDateString('zh-TW'), ...formData, finalPrice: finalP }, ...drinks];
+                    updated = [{ id: Date.now(), dateKey, ...formData, finalPrice: finalP }, ...drinks];
                     showToast("資源補給紀錄完成");
                 }
                 setDrinks(updated);
@@ -341,12 +334,13 @@
                 setFormData({ brand: '', name: '', size: 'L', sugar: '無糖', ice: '少冰', topping: '', isEcoFriendly: false, price: '' });
             };
 
-            // 「再來一杯」功能
             const handleQuickAdd = async (oldDrink) => {
+                const now = new Date();
+                const dateKey = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
                 const newRecord = {
                     ...oldDrink,
                     id: Date.now(),
-                    dateKey: new Date().toLocaleDateString('zh-TW'),
+                    dateKey,
                 };
                 const updated = [newRecord, ...drinks];
                 setDrinks(updated);
@@ -367,33 +361,60 @@
 
                     let sz = 'L', sug = '無糖', ice = '少冰', top = '', pr = 0;
 
+                    // 偵測價格
                     for (let i = pts.length - 1; i >= 0; i--) { 
-                        const val = parseInt(pts[i]); if (!isNaN(val)) { pr = val; break; } 
+                        const val = parseInt(pts[i]); 
+                        if (!isNaN(val) && pts[i].length <= 3) { pr = val; break; } 
                     }
 
+                    // 偵測日期
                     const datePts = pts[0].split('/'); 
-                    const m = datePts[datePts.length - 2] || (new Date().getMonth() + 1);
-                    const d = datePts[datePts.length - 1];
-                    const y = datePts.length === 3 ? datePts[0] : currentYear;
+                    const m = parseInt(datePts[datePts.length - 2]) || (new Date().getMonth() + 1);
+                    const d = parseInt(datePts[datePts.length - 1]);
+                    const y = datePts.length === 3 ? parseInt(datePts[0]) : currentYear;
+                    const dateKey = `${y}/${m}/${d}`;
 
-                    if (pts[3] && sizeOptions.includes(pts[3])) sz = pts[3];
+                    // 偵測品牌與品項
+                    const brand = pts[1];
+                    const itemName = pts[2];
 
+                    // 偵測細項與環保杯
+                    const isEco = trimmedLine.includes('環保杯') || trimmedLine.includes('my杯') || trimmedLine.includes('自備杯');
+                    
                     pts.forEach(p => {
+                        if (sizeOptions.includes(p)) sz = p;
                         if (sugarOptions.some(s => p.includes(s))) sug = sugarOptions.find(s => p.includes(s));
                         if (iceOptions.some(i => p.includes(i))) ice = iceOptions.find(i => p.includes(i));
                         if (p.includes('+')) top = p.split('+')[1];
                     });
 
                     newItems.push({
-                        id: Date.now() + index, dateKey: `${y}/${m}/${d}`, brand: pts[1], name: pts[2], size: sz,
-                        sugar: sug, ice: ice, topping: top,
-                        isEcoFriendly: trimmedLine.includes('環保杯'), finalPrice: pr
+                        id: Date.now() + index, 
+                        dateKey, 
+                        brand, 
+                        name: itemName, 
+                        size: sz,
+                        sugar: sug, 
+                        ice, 
+                        topping: top,
+                        isEcoFriendly: isEco, 
+                        finalPrice: isEco ? pr - 5 : pr
                     });
                 });
-                const updated = [...newItems, ...drinks]; 
-                setDrinks(updated); saveData(updated);
-                setShowImportModal(false); setImportText('');
-                showToast(`大量數據匯入完成 (共 ${newItems.length} 筆)`);
+
+                if (newItems.length > 0) {
+                    const updated = [...newItems, ...drinks]; 
+                    setDrinks(updated); 
+                    saveData(updated);
+                    // 跳轉到最新一筆匯入資料的月份
+                    const firstItemParts = newItems[0].dateKey.split('/');
+                    const targetDate = new Date(firstItemParts[0], firstItemParts[1] - 1, 1);
+                    setViewDate(targetDate);
+                    
+                    setShowImportModal(false); 
+                    setImportText('');
+                    showToast(`匯入成功 (共 ${newItems.length} 筆)`);
+                }
             };
 
             if (isSyncing || (isCloudEnabled && !user)) {
@@ -405,9 +426,36 @@
                 );
             }
 
+            if (isCloudEnabled && !user) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-black relative">
+                        <div className="eva-border w-full max-w-sm p-8 bg-[#0D0D0D] shadow-2xl z-10">
+                            <div className="flex flex-col items-center mb-8 text-center">
+                                <EvaUnit01Icon className="w-20 h-20" />
+                                <h1 className="text-2xl font-black italic tracking-tighter text-[#BFFF00] mt-4 uppercase">Drinks Impact</h1>
+                                <p className="text-[10px] text-[#7030A0] font-bold mt-1 tracking-[0.3em] uppercase">身分驗證啟動</p>
+                            </div>
+                            <form onSubmit={handleLogin} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">E-mail</label>
+                                    <input type="email" className="eva-input w-full" placeholder="指令輸入電子郵件" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">Access Key</label>
+                                    <input type="password" className="eva-input w-full" placeholder="輸入存取密碼" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required />
+                                </div>
+                                {authError && <p className="text-red-500 text-[10px] font-bold italic animate-pulse">ERROR: {authError}</p>}
+                                <button type="submit" disabled={isLoggingIn} className="eva-btn eva-btn-primary w-full py-4 text-sm tracking-[0.5em] disabled:opacity-50 uppercase">
+                                    {isLoggingIn ? '驗證中...' : '執行登入程序'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
             return (
                 <div className="max-w-md mx-auto min-h-screen pb-32 relative">
-                    {/* Toast 提示元件 */}
                     {toast && (
                         <div className={`eva-toast eva-border px-6 py-2 bg-black shadow-[0_0_20px_var(--eva-purple)] text-xs font-bold tracking-widest ${toast.type === 'error' ? 'text-red-500' : 'text-[#BFFF00]'}`}>
                             {toast.msg}
@@ -429,7 +477,7 @@
                             <div className="flex flex-col items-end gap-2 shrink-0">
                                 <button onClick={() => setShowImportModal(true)} className="eva-btn px-4 py-1 text-[10px]">批次匯入</button>
                                 {isCloudEnabled && (
-                                    <button onClick={async () => { await window.FirebaseSDK.signOut(window.FirebaseSDK.getAuth()); location.reload(); }} className="text-[7px] text-gray-600 hover:text-red-500 border border-gray-800 px-1 uppercase">登出</button>
+                                    <button onClick={async () => { await window.FirebaseSDK.signOut(window.FirebaseSDK.getAuth()); location.reload(); }} className="text-[7px] text-gray-600 hover:text-red-500 border border-gray-800 px-1 uppercase">登出系統</button>
                                 )}
                             </div>
                         </div>
@@ -449,7 +497,6 @@
                             </div>
                         </div>
 
-                        {/* 新增：環保累計獎勵展示 */}
                         <div className="eva-border p-2 mb-6 border-[#00FF00]/40 flex justify-center items-center gap-3 bg-[#00FF00]/5">
                             <Icon name="leaf" size={14} className="text-[#00FF00]" />
                             <p className="text-[10px] font-bold text-[#00FF00] tracking-widest uppercase">已累計節省資源金：${stats.totalEcoSavings} YEN</p>
@@ -484,7 +531,7 @@
                                                     <h3 className="text-sm font-black text-[#BFFF00] truncate tracking-tight">{drink.brand}</h3>
                                                     <p className="text-[10px] text-gray-400 font-bold mt-0.5 truncate uppercase">{drink.name} <span className="text-[#7030A0]">({drink.size || 'L'})</span></p>
                                                     {drink.topping && (
-                                                        <span className="inline-block bg-[#7030A0]/30 text-[#BFFF00] text-[7px] px-1 border border-[#7030A0] uppercase mt-1">加料: {drink.topping}</span>
+                                                        <span className="inline-block bg-[#7030A0]/30 text-[#BFFF00] text-[7px] px-1 border border-[#7030A0] uppercase mt-1 italic">+{drink.topping}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -500,7 +547,6 @@
                                                 )}
                                             </div>
                                             <div className="flex gap-2 items-center shrink-0">
-                                                {/* 新增：再來一杯按鈕 */}
                                                 <button onClick={() => handleQuickAdd(drink)} className="text-gray-600 hover:text-green-400 p-1 flex items-center gap-1" title="再來一杯">
                                                     <Icon name="refresh-cw" size={14} />
                                                     <span className="text-[8px] font-bold uppercase">Repeat</span>
@@ -523,7 +569,7 @@
                         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
                             <div className="eva-border w-full max-w-sm p-6 bg-[#0D0D0D]">
                                 <div className="flex justify-between items-center mb-6 border-b border-[#BFFF00] pb-2 text-[#BFFF00]"><h2 className="text-xs font-bold tracking-[0.2em] uppercase">批量數據同步程序</h2><button onClick={() => setShowImportModal(false)}><Icon name="x" size={16} /></button></div>
-                                <textarea className="eva-input w-full h-48 text-[10px] font-mono mb-4 no-scrollbar leading-relaxed" placeholder="範例：1/6 清心福全 錫蘭紅茶 L 無糖少冰+珍珠 40" value={importText} onChange={e => setImportText(e.target.value)} />
+                                <textarea className="eva-input w-full h-48 text-[10px] font-mono mb-4 no-scrollbar leading-relaxed" placeholder="範例：1/6 清心福全 錫蘭紅茶 L 無糖少冰+珍珠 40 環保杯" value={importText} onChange={e => setImportText(e.target.value)} />
                                 <div className="flex gap-3"><button onClick={() => setShowImportModal(false)} className="eva-btn flex-1 py-3 text-[10px]">中斷</button><button onClick={handleImport} className="eva-btn eva-btn-primary flex-1 py-3 text-[10px]">執行</button></div>
                             </div>
                         </div>
@@ -543,7 +589,7 @@
                                         <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">甜度</label><select className="eva-input w-full text-xs font-bold" value={formData.sugar} onChange={e => setFormData({...formData, sugar: e.target.value})}>{sugarOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
                                         <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">冰塊</label><select className="eva-input w-full text-xs font-bold" value={formData.ice} onChange={e => setFormData({...formData, ice: e.target.value})}>{iceOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
                                     </div>
-                                    <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">加料</label><input className="eva-input w-full text-sm" placeholder="例如：珍珠、波霸" value={formData.topping} onChange={e => setFormData({...formData, topping: e.target.value})} /></div>
+                                    <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">加料內容</label><input className="eva-input w-full text-sm font-bold" placeholder="珍珠、椰果..." value={formData.topping} onChange={e => setFormData({...formData, topping: e.target.value})} /></div>
                                     <div className="flex items-center justify-between p-3 border border-[#7030A0]/50 bg-[#7030A0]/5"><span className="text-[10px] font-bold text-[#BFFF00] uppercase tracking-widest">環保杯折扣</span><div onClick={() => setFormData({...formData, isEcoFriendly: !formData.isEcoFriendly})} className={`w-10 h-5 border border-[#BFFF00] relative cursor-pointer ${formData.isEcoFriendly ? 'bg-[#BFFF00]' : 'bg-transparent'}`}><div className={`absolute top-0.5 w-3 h-3 bg-white transition-all ${formData.isEcoFriendly ? 'left-6' : 'left-1'}`} /></div></div>
                                     <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">單價 (原價)</label><input type="number" className="eva-input w-full text-xl font-black italic text-[#BFFF00]" placeholder="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required /></div>
                                     <button type="submit" className="eva-btn eva-btn-primary w-full py-4 text-sm mt-4 tracking-[0.5em] uppercase">{editingId ? '執行更新程序' : '執行紀錄程序'}</button>
