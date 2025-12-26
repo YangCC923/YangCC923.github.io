@@ -532,13 +532,13 @@
                         <EvaUnit01Icon className="w-16 h-16 mb-6" />
 
                         <div className="eva-border p-8 w-full max-w-sm bg-[#0D0D0D] relative z-10">
-                            <h2 className="text-xl font-black italic text-[#BFFF00] mb-6 text-center tracking-tighter uppercase">MAGI SYSTEM ACCESS</h2>
+                            <h2 className="text-xl font-black italic text-[#BFFF00] mb-6 text-center tracking-tighter uppercase">MAGI 系統連結程序</h2>
 
                             {authError && <div className="text-red-500 text-[10px] font-bold mb-4 text-center tracking-widest uppercase animate-pulse">{authError}</div>}
 
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div>
-                                    <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest block mb-1 text-left">IDENTIFIER</label>
+                                    <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest block mb-1 text-left">識別代碼 (EMAIL)</label>
                                     <input
                                         type="email"
                                         className="eva-input w-full text-sm font-bold"
@@ -549,7 +549,7 @@
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest block mb-1 text-left">PASSCODE</label>
+                                    <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest block mb-1 text-left">通行密碼</label>
                                     <input
                                         type="password"
                                         className="eva-input w-full text-sm font-bold"
@@ -561,7 +561,7 @@
                                 </div>
 
                                 <button type="submit" disabled={isLoggingIn} className="eva-btn eva-btn-primary w-full py-3 text-xs tracking-[0.3em] mt-2 uppercase flex justify-center items-center gap-2">
-                                    {isLoggingIn ? 'SYNCING...' : 'INITIATE SYNC'}
+                                    {isLoggingIn ? '同步鏈結中...' : '啟動同步程序'}
                                 </button>
                             </form>
 
@@ -571,12 +571,12 @@
                                     const saved = localStorage.getItem('drinks_impact_github_local');
                                     if (saved) setDrinks(JSON.parse(saved));
                                 }} className="text-[9px] text-gray-500 hover:text-[#BFFF00] tracking-widest uppercase transition-colors">
-                                    &gt;&gt; ENTER OFFLINE MODE
+                                    &gt;&gt; 切換至離線模式
                                 </button>
                             </div>
                         </div>
 
-                        <p className="absolute bottom-6 text-[8px] text-[#7030A0] tracking-[0.5em] opacity-50 uppercase">RESTRICTED AREA / AUTHORIZED PERSONNEL ONLY</p>
+                        <p className="absolute bottom-6 text-[8px] text-[#7030A0] tracking-[0.5em] opacity-50 uppercase">非授權人員請勿操作 / RESTRICTED AREA</p>
                     </div>
                 );
             }
