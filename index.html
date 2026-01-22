@@ -447,6 +447,7 @@
                     updated = drinks.map(d => d.id === editingId ? { ...d, ...formData, finalPrice: finalP } : d);
                     showToast("目標紀錄已修正");
                 } else {
+                    updated = [{ id: Date.now(), ...formData, finalPrice: finalP }, ...drinks];
                     showToast("資源補給紀錄完成");
                 }
                 setDrinks(updated);
