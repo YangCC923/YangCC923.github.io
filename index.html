@@ -102,6 +102,7 @@
             color: var(--eva-green);
             padding: 10px;
             outline: none;
+            box-sizing: border-box;
         }
 
         .eva-input:focus {
@@ -237,6 +238,12 @@
             </svg>
         );
 
+        // 輔助函數：取得補零的日期字串 (YYYY/MM/DD)
+        const getTodayDate = () => {
+            const d = new Date();
+            return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+        };
+
         const App = () => {
             const [user, setUser] = useState(null);
             const [drinks, setDrinks] = useState([]);
@@ -254,7 +261,7 @@
                 topping: '',
                 isEcoFriendly: false,
                 price: '',
-                dateKey: new Date().toLocaleDateString('zh-TW')
+                dateKey: getTodayDate()
             });
             const [isCloudEnabled, setIsCloudEnabled] = useState(false);
             const [customMenu, setCustomMenu] = useState({});
@@ -400,7 +407,7 @@
             }, [drinks, viewDate]);
 
             const stats = useMemo(() => {
-                const todayKey = new Date().toLocaleDateString('zh-TW');
+                const todayKey = getTodayDate();
                 const targetYear = viewDate.getFullYear();
                 const targetMonth = viewDate.getMonth() + 1;
 
@@ -470,7 +477,7 @@
                     topping: '',
                     isEcoFriendly: false,
                     price: '',
-                    dateKey: new Date().toLocaleDateString('zh-TW')
+                    dateKey: getTodayDate()
                 });
             };
 
@@ -479,7 +486,7 @@
                 const newRecord = {
                     ...oldDrink,
                     id: Date.now(),
-                    dateKey: new Date().toLocaleDateString('zh-TW'),
+                    dateKey: getTodayDate(),
                 };
                 const updated = [newRecord, ...drinks];
                 setDrinks(updated);
@@ -704,7 +711,7 @@
                             topping: '',
                             isEcoFriendly: false,
                             price: '',
-                            dateKey: new Date().toLocaleDateString('zh-TW')
+                            dateKey: getTodayDate()
                         });
                         setShowAddModal(true);
                     }} className="fixed bottom-10 right-10 w-20 h-20 rounded-full flex items-center justify-center fab-eva z-50 p-2 overflow-hidden shadow-2xl">
