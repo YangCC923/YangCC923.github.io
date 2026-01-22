@@ -245,8 +245,19 @@
             const [showImportModal, setShowImportModal] = useState(false);
             const [editingId, setEditingId] = useState(null);
             const [importText, setImportText] = useState('');
-            const [formData, setFormData] = useState({ brand: '', name: '', size: 'L', sugar: '無糖', ice: '少冰', topping: '', isEcoFriendly: false, price: '' });
+            const [formData, setFormData] = useState({
+                brand: '',
+                name: '',
+                size: 'L',
+                sugar: '無糖',
+                ice: '少冰',
+                topping: '',
+                isEcoFriendly: false,
+                price: '',
+                dateKey: new Date().toLocaleDateString('zh-TW')
+            });
             const [isCloudEnabled, setIsCloudEnabled] = useState(false);
+            const [customMenu, setCustomMenu] = useState({});
             const [toast, setToast] = useState(null); // 新增 Toast 狀態
 
             // 登入狀態
@@ -257,63 +268,34 @@
 
             const [viewDate, setViewDate] = useState(new Date());
 
-            const commonBrands = ["茶の魔手", "50嵐", "清心福全", "迷客夏", "可不可", "麻古茶坊", "功夫茶", "早安有喜", "麥味登", "萬波", "台茶一號", "拾汣茶屋", "呷尚寶", "八曜和茶", "得正", "鶴茶樓", "一沐日", "五桐號", "龜記", "茶湯會", "珍煮丹", "COMEBUY", "大苑子", "春水堂", "天仁茗茶", "再睡5分鐘", "先喝道", "七盞茶", "烏弄"];
+            const defaultBrands = ["茶の魔手", "50嵐", "清心福全"];
+            const commonBrands = useMemo(() => {
+                const custom = Object.keys(customMenu);
+                return Array.from(new Set([...defaultBrands, ...custom]));
+            }, [customMenu]);
+
+            const mergedMenu = useMemo(() => {
+                const combined = { ...BRAND_MENU };
+                Object.entries(customMenu).forEach(([brand, items]) => {
+                    if (combined[brand]) {
+                        const existingNames = combined[brand].map(i => i.name);
+                        const newItems = items.filter(i => !existingNames.includes(i.name));
+                        combined[brand] = [...combined[brand], ...newItems];
+                    } else {
+                        combined[brand] = items;
+                    }
+                });
+                return combined;
+            }, [customMenu]);
 
             const BRAND_MENU = {
-                "50嵐": [
-                    { name: "四季春青茶", price: 35 }, { name: "黃金烏龍", price: 35 }, { name: "茉莉綠茶", price: 35 }, { name: "阿薩姆紅茶", price: 35 },
-                    { name: "波霸奶茶", price: 55 }, { name: "珍珠奶茶", price: 55 }, { name: "燕麥奶茶", price: 55 },
-                    { name: "紅茶拿鐵", price: 60 }, { name: "綠茶拿鐵", price: 60 }, { name: "一號(四季春+珍波椰)", price: 45 }, { name: "8冰綠", price: 50 },
-                    { name: "微檸檬紅", price: 45 }, { name: "檸檬綠", price: 55 }, { name: "可可芭蕾", price: 60 }
-                ],
-                "清心福全": [
-                    { name: "烏龍綠茶", price: 35 }, { name: "優多綠茶", price: 50 }, { name: "珍珠奶茶", price: 55 }, { name: "梅子綠茶", price: 50 },
-                    { name: "蜂蜜普洱珍珠鮮奶茶", price: 75 }, { name: "錫蘭紅茶", price: 30 }, { name: "特級綠茶", price: 30 }, { name: "冬瓜茶", price: 30 }
-                ],
-                "迷客夏": [
-                    { name: "珍珠紅茶拿鐵", price: 65 }, { name: "大甲芋頭鮮奶", price: 70 }, { name: "柳丁綠茶", price: 60 },
-                    { name: "決明大麥", price: 30 }, { name: "茉香綠茶", price: 30 }, { name: "原鄉冬瓜茶", price: 30 }, { name: "青檸香茶", price: 65 }
-                ],
-                "可不可": [
-                    { name: "熟成紅茶", price: 35 }, { name: "胭脂紅茶", price: 45 }, { name: "春芽冷露", price: 35 },
-                    { name: "雪藏紅茶", price: 60 }, { name: "白玉歐蕾", price: 65 }, { name: "麗春紅茶", price: 35 }, { name: "冷露歐蕾", price: 55 }
-                ],
-                "麻古茶坊": [
-                    { name: "金萱雙Q", price: 45 }, { name: "番茄梅蜜", price: 75 }, { name: "芝芝葡萄果粒", price: 95 },
-                    { name: "高山金萱茶", price: 35 }, { name: "柳橙果粒茶", price: 70 }, { name: "楊枝甘露", price: 85 }, { name: "奇異果果粒茶", price: 75 }
-                ],
-                "茶の魔手": [
-                    { name: "山楂烏龍", price: 35 }, { name: "藍莓凍奶茶", price: 45 }, { name: "台灣青茶", price: 30 }, { name: "伯爵紅茶", price: 30 }
-                ],
-                "五桐號": [
-                    { name: "五桐茶", price: 35 }, { name: "清香烏龍", price: 35 }, { name: "老實人紅茶", price: 35 },
-                    { name: "杏仁凍五桐茶", price: 49 }, { name: "綠茶凍五桐茶奶", price: 65 }, { name: "荔枝冰茶凍飲", price: 60 }
-                ],
-                "鶴茶樓": [
-                    { name: "鶴頂紅茶", price: 35 }, { name: "綺夢紅茶", price: 35 }, { name: "舶來紅茶", price: 35 },
-                    { name: "復刻奶茶", price: 50 }, { name: "藝伎紅茶", price: 40 }
-                ],
-                "得正": [
-                    { name: "檸檬春烏龍", price: 55 }, { name: "芝士奶蓋春烏龍", price: 55 }, { name: "焙烏龍", price: 35 }, { name: "春烏龍", price: 35 }
-                ],
-                "八曜和茶": [
-                    { name: "柚香覺醒307", price: 65 }, { name: "究極307", price: 40 }, { name: "八曜和茶", price: 35 }, { name: "京彩夕燒奶茶", price: 65 }
-                ],
-                "大苑子": [
-                    { name: "台灣水果茶", price: 70 }, { name: "愛文芒果冰沙", price: 110 }, { name: "翡翠檸檬", price: 55 }, { name: "柚美粒", price: 65 }
-                ],
-                "龜記": [
-                    { name: "紅柚翡翠", price: 69 }, { name: "蘋果紅萱", price: 55 }, { name: "三十三茶王", price: 40 }, { name: "阿源楊桃", price: 50 }
-                ],
-                "一沐日": [
-                    { name: "逮丸奶茶", price: 65 }, { name: "粉粿黑糖奶茶", price: 60 }, { name: "油切蕎麥茶", price: 35 }
-                ]
+
             };
 
             // 自動更新品項價格邏輯
             useEffect(() => {
                 if (!formData.name) return;
-                const menu = BRAND_MENU[formData.brand];
+                const menu = mergedMenu[formData.brand];
                 if (menu) {
                     const item = menu.find(d => d.name === formData.name);
                     if (item) {
@@ -337,6 +319,8 @@
                 if (!USER_CUSTOM_FIREBASE_CONFIG || !USER_CUSTOM_FIREBASE_CONFIG.apiKey) {
                     const saved = localStorage.getItem('drinks_impact_github_local');
                     if (saved) setDrinks(JSON.parse(saved));
+                    const savedMenu = localStorage.getItem('drinks_impact_custom_menu');
+                    if (savedMenu) setCustomMenu(JSON.parse(savedMenu));
                     setIsCloudEnabled(false);
                     setIsSyncing(false);
                     return;
@@ -367,7 +351,11 @@
                 const docRef = doc(db, 'artifacts', 'drinks-impact-v7-github', 'users', user.uid, 'data', 'records');
 
                 const unsubscribe = onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) setDrinks(docSnap.data().list || []);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setDrinks(data.list || []);
+                        if (data.customMenu) setCustomMenu(data.customMenu);
+                    }
                 }, (err) => console.warn("同步受阻:", err));
 
                 return () => unsubscribe();
@@ -389,15 +377,16 @@
                 }
             };
 
-            const saveData = async (newList) => {
+            const saveData = async (newList, newMenu = customMenu) => {
                 localStorage.setItem('drinks_impact_github_local', JSON.stringify(newList));
+                localStorage.setItem('drinks_impact_custom_menu', JSON.stringify(newMenu));
                 if (!user || !isCloudEnabled) return;
 
                 const { getFirestore, doc, setDoc } = window.FirebaseSDK;
                 const db = getFirestore();
                 const docRef = doc(db, 'artifacts', 'drinks-impact-v7-github', 'users', user.uid, 'data', 'records');
                 try {
-                    await setDoc(docRef, { list: newList, updatedAt: Date.now() });
+                    await setDoc(docRef, { list: newList, customMenu: newMenu, updatedAt: Date.now() });
                 } catch (err) { console.error("存檔失敗:", err); }
             };
 
@@ -451,14 +440,38 @@
                     updated = drinks.map(d => d.id === editingId ? { ...d, ...formData, finalPrice: finalP } : d);
                     showToast("目標紀錄已修正");
                 } else {
-                    updated = [{ id: Date.now(), dateKey: new Date().toLocaleDateString('zh-TW'), ...formData, finalPrice: finalP }, ...drinks];
                     showToast("資源補給紀錄完成");
                 }
                 setDrinks(updated);
-                await saveData(updated);
+
+                // 更新自定義選單：如果是新店家或新內容，記錄下來
+                const brand = formData.brand;
+                const item = { name: formData.name, price: parseInt(formData.price) || 0 };
+                let updatedMenu = { ...customMenu };
+                if (!updatedMenu[brand]) {
+                    updatedMenu[brand] = [item];
+                } else {
+                    const exists = updatedMenu[brand].some(i => i.name === item.name);
+                    if (!exists) {
+                        updatedMenu[brand] = [...updatedMenu[brand], item];
+                    }
+                }
+                setCustomMenu(updatedMenu);
+
+                await saveData(updated, updatedMenu);
                 setShowAddModal(false);
                 setEditingId(null);
-                setFormData({ brand: '', name: '', size: 'L', sugar: '無糖', ice: '少冰', topping: '', isEcoFriendly: false, price: '' });
+                setFormData({
+                    brand: '',
+                    name: '',
+                    size: 'L',
+                    sugar: '無糖',
+                    ice: '少冰',
+                    topping: '',
+                    isEcoFriendly: false,
+                    price: '',
+                    dateKey: new Date().toLocaleDateString('zh-TW')
+                });
             };
 
             // 「再來一杯」功能
@@ -681,7 +694,20 @@
                         </div>
                     </main>
 
-                    <button onClick={() => setShowAddModal(true)} className="fixed bottom-10 right-10 w-20 h-20 rounded-full flex items-center justify-center fab-eva z-50 p-2 overflow-hidden shadow-2xl">
+                    <button onClick={() => {
+                        setFormData({
+                            brand: '',
+                            name: '',
+                            size: 'L',
+                            sugar: '無糖',
+                            ice: '少冰',
+                            topping: '',
+                            isEcoFriendly: false,
+                            price: '',
+                            dateKey: new Date().toLocaleDateString('zh-TW')
+                        });
+                        setShowAddModal(true);
+                    }} className="fixed bottom-10 right-10 w-20 h-20 rounded-full flex items-center justify-center fab-eva z-50 p-2 overflow-hidden shadow-2xl">
                         <EvaUnit01Icon /><div className="absolute inset-0 bg-gradient-to-t from-[#BFFF00]/10 to-transparent pointer-events-none"></div>
                     </button>
 
@@ -700,9 +726,25 @@
                             <div className="eva-border w-full max-w-sm p-6 bg-[#0D0D0D] overflow-y-auto max-h-[90vh]">
                                 <div className="flex justify-between items-center mb-6 border-b border-[#BFFF00] pb-2 text-[#BFFF00]"><h2 className="text-xs font-bold tracking-[0.2em] uppercase">{editingId ? '修改現有紀錄' : '建立補給紀錄'}</h2><button onClick={() => { setShowAddModal(false); setEditingId(null); }}><Icon name="x" size={16} /></button></div>
                                 <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">補給日期</label>
+                                        <input
+                                            type="date"
+                                            className="eva-input w-full text-sm font-bold"
+                                            value={formData.dateKey.replace(/\//g, '-')}
+                                            onChange={e => setFormData({ ...formData, dateKey: e.target.value.replace(/-/g, '/') })}
+                                            required
+                                        />
+                                    </div>
                                     <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">店家</label><input list="brand-list" className="eva-input w-full text-sm font-bold" placeholder="輸入或選取品牌" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} required /><datalist id="brand-list">{commonBrands.map(b => <option key={b} value={b} />)}</datalist></div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">品項</label><input className="eva-input w-full text-sm" placeholder="飲品名稱" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required /></div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">品項</label>
+                                            <input list="item-list" className="eva-input w-full text-sm" placeholder="飲品名稱" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                                            <datalist id="item-list">
+                                                {mergedMenu[formData.brand]?.map(i => <option key={i.name} value={i.name} />)}
+                                            </datalist>
+                                        </div>
                                         <div className="space-y-1"><label className="text-[9px] font-bold text-[#7030A0] uppercase tracking-widest">容量</label><select className="eva-input w-full text-xs font-bold" value={formData.size} onChange={e => setFormData({ ...formData, size: e.target.value })}>{sizeOptions.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
@@ -716,10 +758,11 @@
                                 </form>
                             </div>
                         </div>
-                    )}
+                    )
+                    }
 
                     <footer className="mt-12 mb-6 opacity-20 text-[8px] text-center tracking-[0.4em] uppercase">MAGI-01 系統運行中 / 2025 全雲端存檔就緒</footer>
-                </div>
+                </div >
             );
         };
 
